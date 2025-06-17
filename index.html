@@ -24,9 +24,11 @@
 
       let contextReady = false;
 
+      // Escuchamos todos los mensajes entrantes
       window.addEventListener("message", function (event) {
         console.log("📨 Mensaje recibido:", event);
 
+        // Intentamos acceder a window.csod
         const user = window.csod?.context?.user;
         const token = window.csod?.context?.accessToken;
 
@@ -41,7 +43,7 @@
       });
 
       async function iniciarWidget(user, token) {
-        document.getElementById("user-name").textContent = user.fullName;
+        console.log("🚀 Iniciando widget para:", user.fullName);
 
         const apiUrl = `/services/api/x/users/v2/employees/${user.userId}/groups`;
         console.log("📡 Llamando a la API:", apiUrl);
@@ -54,35 +56,15 @@
             },
           });
 
-          console.log("📥 Respuesta completa:", response);
-
           if (!response.ok) {
             const errorText = await response.text();
-            console.error("❗ Error en respuesta:", response.status, errorText);
             throw new Error(`HTTP ${response.status}: ${errorText}`);
           }
 
           const data = await response.json();
-          const groups = data.groups || [];
-          const listEl = document.getElementById("group-list");
-          listEl.innerHTML = "";
-
-          if (groups.length === 0) {
-            listEl.innerHTML = "<li>No pertenece a ningún grupo.</li>";
-            console.log("ℹ️ El usuario no tiene grupos.");
-          } else {
-            groups.forEach((group) => {
-              const li = document.createElement("li");
-              li.textContent = `${group.name} (${group.type})`;
-              listEl.appendChild(li);
-              console.log("📌 Grupo agregado:", group.name);
-            });
-          }
+          console.log("📥 Grupos recibidos:", data.groups);
         } catch (err) {
           console.error("❗ Error al obtener grupos:", err);
-          document.getElementById(
-            "group-list"
-          ).innerHTML = `<li>Error: ${err.message}</li>`;
         }
       }
     </script>
