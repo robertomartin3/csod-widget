@@ -22,29 +22,28 @@
     <script>
       console.log("✅ El script JS se está ejecutando correctamente.");
 
-      let contextReady = false;
+      function iniciarSiListo() {
+        const csod = window.csod;
+        const user = csod?.context?.user;
+        const token = csod?.context?.accessToken;
 
-      // Escuchamos todos los mensajes entrantes
-      window.addEventListener("message", function (event) {
-        console.log("📨 Mensaje recibido:", event);
-
-        // Intentamos acceder a window.csod
-        const user = window.csod?.context?.user;
-        const token = window.csod?.context?.accessToken;
-
-        console.log("🧠 window.csod:", window.csod);
+        console.log("🧠 window.csod:", csod);
         console.log("👤 Usuario:", user);
         console.log("🔐 Token:", token ? "Disponible" : "No disponible");
 
-        if (user && token && !contextReady) {
-          contextReady = true;
+        if (user && token) {
           iniciarWidget(user, token);
+        } else {
+          console.warn("⏳ Contexto CSOD aún no disponible. Reintentando...");
+          setTimeout(iniciarSiListo, 500); // reintenta cada 500ms
         }
-      });
+      }
+
+      setTimeout(iniciarSiListo, 500); // primer intento tras 500ms
 
       async function iniciarWidget(user, token) {
-        console.log("🚀 Iniciando widget para:", user.fullName);
-
+        document.getElementById("user-name").textContent =
+          user.fullName || "usuario";
         const apiUrl = `/services/api/x/users/v2/employees/${user.userId}/groups`;
         console.log("📡 Llamando a la API:", apiUrl);
 
@@ -62,9 +61,24 @@
           }
 
           const data = await response.json();
+          const groupList = document.getElementById("group-list");
+          groupList.innerHTML = "";
+
+          if (data.groups?.length > 0) {
+            data.groups.forEach((group) => {
+              const li = document.createElement("li");
+              li.textContent = group.groupName;
+              groupList.appendChild(li);
+            });
+          } else {
+            groupList.innerHTML = "<li>No se encontraron grupos.</li>";
+          }
+
           console.log("📥 Grupos recibidos:", data.groups);
         } catch (err) {
           console.error("❗ Error al obtener grupos:", err);
+          document.getElementById("group-list").innerHTML =
+            "<li>Error al obtener los grupos</li>";
         }
       }
     </script>
