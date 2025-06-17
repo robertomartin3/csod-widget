@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Grupos del usuario</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      ul {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Grupos de <span id="user-name">...</span></h2>
+    <ul id="group-list">
+      <li>Cargando...</li>
+    </ul>
+
+    <script>
+      console.log("✅ El script JS se está ejecutando correctamente.");
+
+      let contextReady = false;
+
+      window.addEventListener("message", function (event) {
+        console.log("📨 Mensaje recibido:", event);
+
+        const user = window.csod?.context?.user;
+        const token = window.csod?.context?.accessToken;
+
+        console.log("🧠 window.csod:", window.csod);
+        console.log("👤 Usuario:", user);
+        console.log("🔐 Token:", token ? "Disponible" : "No disponible");
+
+        if (user && token && !contextReady) {
+          contextReady = true;
+          iniciarWidget(user, token);
+        }
+      });
+
+      async function iniciarWidget(user, token) {
+        document.getElementById("user-name").textContent = user.fullName;
+
+        const apiUrl = `/services/api/x/users/v2/employees/${user.userId}/groups`;
+        console.log("📡 Llamando a la API:", apiUrl);
+
+        try {
+          const response = await fetch(apiUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          console.log("📥 Respuesta completa:", response);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("❗ Error en respuesta:", response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+
+          const data = await response.json();
+          const groups = data.groups || [];
+          const listEl = document.getElementById("group-list");
+          listEl.innerHTML = "";
+
+          if (groups.length === 0) {
+            listEl.innerHTML = "<li>No pertenece a ningún grupo.</li>";
+            console.log("ℹ️ El usuario no tiene grupos.");
+          } else {
+            groups.forEach((group) => {
+              const li = document.createElement("li");
+              li.textContent = `${group.name} (${group.type})`;
+              listEl.appendChild(li);
+              console.log("📌 Grupo agregado:", group.name);
+            });
+          }
+        } catch (err) {
+          console.error("❗ Error al obtener grupos:", err);
+          document.getElementById(
+            "group-list"
+          ).innerHTML = `<li>Error: ${err.message}</li>`;
+        }
+      }
+    </script>
+  </body>
+</html>
